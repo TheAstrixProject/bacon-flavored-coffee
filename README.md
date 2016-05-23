@@ -1,2 +1,2 @@
-#Be sure to compile the main.coffee file into main.js.
+#Be sure to compile the main.coffee file.
     coffee -c main.coffee
