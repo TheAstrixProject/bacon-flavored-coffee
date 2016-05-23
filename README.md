@@ -1,2 +1,2 @@
-#Be sure to compile the main.coffee file.
+#Be sure to compile 'main.coffee'
     coffee -c main.coffee
