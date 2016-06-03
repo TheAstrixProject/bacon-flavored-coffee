@@ -1,6 +1,7 @@
 ## Constants
-G = 9.81
+G = 6.67e-11 # N*m^2/kg^2
 framerate = 60
+scale = 250000 # m/px
 
 ## Constructors
 Vector2 = (x,y) ->
@@ -8,27 +9,39 @@ Vector2 = (x,y) ->
   this.Y = y
   this.add = (v) ->
     return (new Vector2(this.X + v.X, this.Y + v.Y))
+  this.scalar = (s) ->
+    return (new Vector2(this.X * s, this.Y * s))
   return this
 
 Planet = (x,y) ->
   this.X = x
   this.Y = y
-  this.V = 0
-  this.sX = 100
-  this.sY = 100
+  this.V = new Vector2(0,0)
+  this.M = 5.972e24 # kg
+  this.R = 6.371e6 # m
+  this.gVectorTo = (p) ->
+    x = this.X - p.X
+    y = this.Y - p.Y
+    r = Math.sqrt(x * x + y * y)
+    g = ((G * p.M) / (r * r))
+    theta = Math.atan2(y,x)
+    gVector = new Vector2(Math.cos(theta) * g, Math.sin(theta) * g)
+    return gVector
   return this
 
 ## Functions
 fps = (d) -> 1000 / d
 
-animate = (p) ->
-  apt = G / framerate # Acceleration Per Tick. Eventually tie this to the real tick not the ideal framerate.
-  yBound = $('#screen')[0].height - (p.sY / 2)
-  p.V += apt
-  p.Y += p.V
-  if (p.Y > yBound)
-    p.Y = yBound
-    p.V = -p.V
+totalGravityVector = (p,arr) ->
+  ps = arr.filter((x) -> x != p)
+  vs = ps.map((x) -> p.gVectorTo(x))
+  tgv = vs.reduce(((a,v) -> a.add(v)), new Vector2(0,0))
+  return tgv
+
+animate = (p,arr) ->
+  p.V = p.V.add(totalGravityVector(p,arr).scalar(scale))
+  p.X -= p.V.X / framerate
+  p.Y -= p.V.Y / framerate
 
 sizeCanvas = () ->
   canvas = $('#screen')[0]
@@ -45,7 +58,7 @@ clear = () ->
 draw = (p) ->
   canvas = $('#screen')[0]
   ctx = canvas.getContext('2d')
-  ctx.drawImage($('#POL')[0], p.X - (p.sX / 2), p.Y - (p.sY / 2), p.sX, p.sY)
+  ctx.drawImage($('#POL')[0], (p.X / scale) - (p.R / scale), (p.Y / scale) - (p.R / scale), (p.R / scale) * 2, (p.R / scale) * 2)
 
 ## Streams
 resize = $(window).asEventStream('resize')
@@ -58,11 +71,19 @@ tick = Bacon.interval(fps(framerate))
 resize.onValue(sizeCanvas)
 
 ## Properties
+
+# Testing Initialization Code
+#init = [new Planet(600,400),new Planet(650,400)]
+#init[0].M = 10000
+#init[0].R = 25
+#init[1].V = new Vector2(0,1)
+# To be removed in the future
+
 planets = combinedInput.scan([], (a,e) ->
   if e == 'reset'
     return []
   else
-    a.concat(new Planet(e.offsetX, e.offsetY)))
+    a.concat(new Planet(e.offsetX * scale, e.offsetY * scale)))
 
 ## Initialize
 sizeCanvas()
@@ -71,6 +92,6 @@ sizeCanvas()
 planets.sampledBy(tick).onValue((model) ->
   clear()
   for planet in model
-    animate(planet)
+    animate(planet,model)
     draw(planet)
   )
