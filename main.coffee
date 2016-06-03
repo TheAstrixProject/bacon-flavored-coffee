@@ -73,13 +73,14 @@ resize.onValue(sizeCanvas)
 ## Properties
 
 # Testing Initialization Code
-#init = [new Planet(600,400),new Planet(650,400)]
-#init[0].M = 10000
-#init[0].R = 25
-#init[1].V = new Vector2(0,1)
+init = [new Planet(200 * scale,400 * scale),new Planet(200 * scale,500 * scale)]
+init[0].V = new Vector2(-50 * scale,0)
+init[1].M = 5.972e22
+init[1].R = 3e6
+init[1].V = new Vector2(10 * scale,0)
 # To be removed in the future
 
-planets = combinedInput.scan([], (a,e) ->
+planets = combinedInput.scan(init, (a,e) ->
   if e == 'reset'
     return []
   else
