@@ -3,12 +3,20 @@ G = 9.81
 framerate = 60
 
 ## Constructors
+Vector2 = (x,y) ->
+  this.X = x
+  this.Y = y
+  this.add = (v) ->
+    return (new Vector2(this.X + v.X, this.Y + v.Y))
+  return this
+
 Planet = (x,y) ->
   this.X = x
   this.Y = y
   this.V = 0
   this.sX = 100
   this.sY = 100
+  return this
 
 ## Functions
 fps = (d) -> 1000 / d
@@ -25,7 +33,7 @@ animate = (p) ->
 sizeCanvas = () ->
   canvas = $('#screen')[0]
   canvas.style.width ='100%'
-  canvas.style.height='98%' # Why does 100% make the canvas bigger than the window?
+  canvas.style.height='95%' # Why does 100% make the canvas bigger than the window?
   canvas.width  = canvas.offsetWidth
   canvas.height = canvas.offsetHeight
 
@@ -42,13 +50,19 @@ draw = (p) ->
 ## Streams
 resize = $(window).asEventStream('resize')
 clicksRaw = $('#screen').asEventStream('click')
+reset = $('#reset').asEventStream('click').map('reset')
+combinedInput = clicksRaw.merge(reset)
 tick = Bacon.interval(fps(framerate))
 
 ## Subscriptions
 resize.onValue(sizeCanvas)
 
 ## Properties
-planets = clicksRaw.scan([], (a,e) -> a.concat(new Planet(e.offsetX, e.offsetY)))
+planets = combinedInput.scan([], (a,e) ->
+  if e == 'reset'
+    return []
+  else
+    a.concat(new Planet(e.offsetX, e.offsetY)))
 
 ## Initialize
 sizeCanvas()
